@@ -10,6 +10,7 @@ class StackedListView extends StatefulWidget {
     required this.itemCount,
     this.initialIndex = 0,
     this.collapsedHeight = 20,
+    this.maxVisibleItems = 6,
   });
 
   final int itemCount;
@@ -17,6 +18,7 @@ class StackedListView extends StatefulWidget {
       itemBuilder;
   final int initialIndex;
   final double collapsedHeight;
+  final int maxVisibleItems;
 
   @override
   State<StackedListView> createState() => _StackedListViewState();
@@ -31,11 +33,23 @@ class _StackedListViewState extends State<StackedListView> {
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: widget.initialIndex);
+    _page = widget.initialIndex.toDouble();
     _pageController.addListener(() {
       _page = _pageController.page!;
       setState(() {});
     });
-    print("Called initState");
+  }
+
+  @override
+  void didUpdateWidget(covariant StackedListView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) {
+      _pageController.animateToPage(
+        widget.initialIndex,
+        duration: kThemeAnimationDuration * 2,
+        curve: Curves.easeInOutCubicEmphasized,
+      );
+    }
   }
 
   // @override
@@ -106,7 +120,8 @@ class _StackedListViewState extends State<StackedListView> {
         builder: (BuildContext context) {
           final PreferredSizeWidget item = widget.itemBuilder(context, i);
           final itemHeight = item.preferredSize.height;
-          return Opacity(
+          return AnimatedOpacity(
+            duration: kThemeAnimationDuration,
             opacity: (i >= minIndex && i <= maxIndex) ? 1 : 0,
             child: Transform.scale(
               scaleX: getScale(i),
