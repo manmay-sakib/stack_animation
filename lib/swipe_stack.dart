@@ -86,7 +86,6 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
       _positions[i + _currentIndex + 1] = (i + 1) * -widget.displacement;
     }
     _positions[_currentIndex] = 0;
-    print(_positions);
   }
 
   @override
@@ -185,22 +184,6 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
 
   double _calculateScaleByCurrentPosition(int index) {
     return 1.0 - (0.1 * _currentPositions[index].abs() / 100);
-  }
-
-  double _calculateOpacityByCurrentPosition(int index, bool visible) {
-    if (visible) return 1.0;
-
-    double currentPosition = _currentPositions[index];
-    double previousPosition = _positions[index];
-    double diff = (currentPosition - previousPosition)
-        // .abs()
-        .clamp(-widget.displacement, widget.displacement);
-    double opacity = (diff / widget.displacement).clamp(-1.0, 1.0);
-
-    opacity = (opacity >= 0) ? opacity : opacity * -1;
-    opacity = diff < 0 ? 1 - opacity : opacity;
-
-    return opacity;
   }
 
   @override
