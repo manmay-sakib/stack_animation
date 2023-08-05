@@ -35,9 +35,12 @@ class HomePage extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Stack Animation'),
       ),
-      body: SwipeStack(
-        itemCount: 10,
-        itemBuilder: (context, index) => StackCard(pageNo: index),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: SwipeStack(
+          itemCount: 10,
+          itemBuilder: (context, index) => StackCard(pageNo: index),
+        ),
       ),
       // body: StackedListView(
       //   itemCount: 20,

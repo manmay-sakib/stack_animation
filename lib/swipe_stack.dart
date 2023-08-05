@@ -26,6 +26,7 @@ class SwipeStack extends StatefulWidget {
     this.maxVisibleBottomStackItem = 2,
     this.opacityAnimationDuration = const Duration(milliseconds: 250),
     this.transitionDuration = const Duration(milliseconds: 500),
+    this.scaleFactor = 0.3,
   })  : assert(itemCount > 0, "Item count must be greater than 0"),
         assert(initialIndex >= 0, "Initial index can not be negative"),
         assert(initialIndex < itemCount, "Initial index out of range"),
@@ -62,6 +63,9 @@ class SwipeStack extends StatefulWidget {
 
   /// The duration of the transition animation when the item is being swiped.
   final Duration transitionDuration;
+
+  /// The scale factor of the item when it is being swiped.
+  final double scaleFactor;
 
   @override
   State<SwipeStack> createState() => _SwipeStackState();
@@ -183,7 +187,7 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
   }
 
   double _calculateScaleByCurrentPosition(int index) {
-    return 1.0 - (0.1 * _currentPositions[index].abs() / 100);
+    return 1.0 - (widget.scaleFactor * _currentPositions[index].abs() / 100);
   }
 
   @override
