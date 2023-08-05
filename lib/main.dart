@@ -1,8 +1,5 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:stack_animation/stack_card.dart';
-import 'package:stack_animation/stacked_list_view.dart';
 import 'package:stack_animation/swipe_stack.dart';
 
 void main() {
@@ -42,11 +39,6 @@ class HomePage extends StatelessWidget {
           itemBuilder: (context, index) => StackCard(pageNo: index),
         ),
       ),
-      // body: StackedListView(
-      //   itemCount: 20,
-      //   initialIndex: 10,
-      //   itemBuilder: (_, index) => StackCard(pageNo: index),
-      // ),
     );
   }
 }
