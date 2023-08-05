@@ -2,14 +2,17 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-class StackItem {
+class _StackItem {
   Widget child;
   int index;
   bool visible;
 
-  StackItem({required this.child, required this.index, this.visible = true});
+  _StackItem({required this.child, required this.index, this.visible = true});
 }
 
+/// A widget that provides a stack of cards that can be swiped vertically.
+/// It is similar to the Tinder app's stack of cards.
+/// The [itemCount] and [itemBuilder] arguments must not be null.
 class SwipeStack extends StatefulWidget {
   const SwipeStack({
     super.key,
@@ -19,30 +22,59 @@ class SwipeStack extends StatefulWidget {
     this.displacement = 60,
     this.initialIndex = 0,
     this.minimumDragDistance = 200,
-    this.maxVisibleStackItem = 5,
-  });
+    this.maxVisibleTopStackItem = 2,
+    this.maxVisibleBottomStackItem = 2,
+    this.opacityAnimationDuration = const Duration(milliseconds: 250),
+    this.transitionDuration = const Duration(milliseconds: 500),
+  })  : assert(itemCount > 0, "Item count must be greater than 0"),
+        assert(initialIndex >= 0, "Initial index can not be negative"),
+        assert(initialIndex < itemCount, "Initial index out of range"),
+        assert(minimumDragDistance > 0,
+            "Minimum drag distance must be greater than 0"),
+        assert(maxVisibleTopStackItem >= 0,
+            "Maximum visible top stack item can not be negative"),
+        assert(maxVisibleBottomStackItem >= 0,
+            "Maximum visible bottom stack item can not be negative");
 
+  /// The builder functions that builds the widget at the given index.
   final IndexedWidgetBuilder itemBuilder;
+
+  /// The number of items in the stack.
   final int itemCount;
-  // final double itemExtent;
+
+  /// The distance between each item in the stack.
   final double displacement;
+
+  /// The initial index of the item to be shown.
   final int initialIndex;
+
+  /// The minimum distance that the item must be dragged to be considered as swiped.
   final double minimumDragDistance;
-  final double maxVisibleStackItem;
+
+  /// The maximum number of items that can be visible at the top of the stack.
+  final int maxVisibleTopStackItem;
+
+  /// The maximum number of items that can be visible at the bottom of the stack.
+  final int maxVisibleBottomStackItem;
+
+  /// The duration of the opacity animation when the item is being swiped.
+  final Duration opacityAnimationDuration;
+
+  /// The duration of the transition animation when the item is being swiped.
+  final Duration transitionDuration;
 
   @override
   State<SwipeStack> createState() => _SwipeStackState();
 }
 
 class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
-  final List<StackItem> _topCards = [];
-  final List<StackItem> _bottomCards = [];
+  final List<_StackItem> _topCards = [];
+  final List<_StackItem> _bottomCards = [];
   late final List<double> _positions;
   late final List<double> _currentPositions;
-  late StackItem currentWidget;
+  late _StackItem currentWidget;
   int _currentIndex = 0;
   double _dragDelta = 0;
-  int get _maxVisibleWidget => (widget.maxVisibleStackItem - 1) ~/ 2;
 
   late final AnimationController _animationController;
 
@@ -70,7 +102,7 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 1500),
     );
-    _animationController.addListener(_currentPositionListener);
+    _animationController.addListener(_currentPositionUpdater);
   }
 
   void _arrangeWidgets() {
@@ -79,27 +111,29 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
 
     for (int i = 0; i < _currentIndex; i++) {
       // if (_currentIndex - i > _maxVisibleWidget) continue;
+      if (_currentIndex - i > widget.maxVisibleBottomStackItem + 1) continue;
       _bottomCards.add(
-        StackItem(
+        _StackItem(
           child: widget.itemBuilder(context, i),
           index: i,
-          visible: _currentIndex - i != _maxVisibleWidget,
+          visible: true,
         ),
       );
     }
 
     for (int i = widget.itemCount - 1; i > _currentIndex; i--) {
       // if (i - _currentIndex > _maxVisibleWidget) continue;
+      if (i - _currentIndex > widget.maxVisibleTopStackItem + 1) continue;
       _topCards.add(
-        StackItem(
+        _StackItem(
           child: widget.itemBuilder(context, i),
           index: i,
-          visible: i - _currentIndex != _maxVisibleWidget,
+          visible: true,
         ),
       );
     }
 
-    currentWidget = StackItem(
+    currentWidget = _StackItem(
       child: widget.itemBuilder(context, _currentIndex),
       index: _currentIndex,
     );
@@ -117,7 +151,7 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
 
   void _resetPositions() {
     setState(() {
-      print(_dragDelta);
+      // print(_dragDelta);
       if (_dragDelta.abs() > widget.minimumDragDistance) {
         int direction = _dragDelta > 0 ? 1 : -1;
         _currentIndex = min(_currentIndex + direction, widget.itemCount - 1);
@@ -132,12 +166,9 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
     _dragDelta = 0;
     _animationController.reset();
     await _animationController.forward();
-    // setState(() {
-    //   _canDrag = true;
-    // });
   }
 
-  void _currentPositionListener() {
+  void _currentPositionUpdater() {
     setState(() {
       for (int i = 0; i < widget.itemCount; i++) {
         _currentPositions[i] =
@@ -157,13 +188,6 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
   }
 
   double _calculateOpacityByCurrentPosition(int index, bool visible) {
-    // int indexDistance = _currentIndex - index;
-    // if (indexDistance.abs() != _maxVisibleWidget) return 1.0;
-    // int nextIndex = indexDistance > 0 ? index + 1 : index - 1;
-    // if (nextIndex < 0 || nextIndex >= widget.itemCount) return 1.0;
-    // if (_currentPositions[nextIndex].abs() > widget.displacement) return 1.0;
-    // double diff = (_currentPositions[nextIndex] - _currentPositions[index])
-    //     .clamp(-widget.displacement, widget.displacement);
     if (visible) return 1.0;
 
     double currentPosition = _currentPositions[index];
@@ -186,10 +210,8 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
       onVerticalDragUpdate: (DragUpdateDetails details) {
         setState(() {
           _dragDelta += details.delta.dy;
-          // print(_dragDelta);
           _addDeltaToCurrentPositions();
         });
-        // print(_dragDelta);
       },
       onVerticalDragStart: (details) {
         if (_animationController.isAnimating) {
@@ -200,7 +222,6 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
         _resetPositions();
       },
       onVerticalDragCancel: () {
-        // print("Local position cancel");
         _resetPositions();
       },
       child: SizedBox.expand(
@@ -208,32 +229,52 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
           alignment: Alignment.center, // fit: StackFit.expand,
           children: [
             ..._bottomCards.map(
-              (e) => Transform(
-                transform: Matrix4.identity()
-                  ..translate(
-                    0.0,
-                    _currentPositions[e.index],
-                  )
-                  ..scale(_calculateScaleByCurrentPosition(e.index)),
-                alignment: Alignment.center,
-                child: e.child,
+              (e) => AnimatedOpacity(
+                key: ValueKey(e.index),
+                duration: const Duration(milliseconds: 300),
+                opacity:
+                    _currentIndex - e.index > widget.maxVisibleBottomStackItem
+                        ? 0
+                        : 1,
+                child: Transform(
+                  transform: Matrix4.identity()
+                    ..translate(
+                      0.0,
+                      _currentPositions[e.index],
+                    )
+                    ..scale(_calculateScaleByCurrentPosition(e.index)),
+                  alignment: Alignment.center,
+                  child: e.child,
+                ),
               ),
             ),
             ..._topCards.map(
-              (e) => Transform(
-                transform: Matrix4.identity()
-                  ..translate(0.0, _currentPositions[e.index])
-                  ..scale(_calculateScaleByCurrentPosition(e.index)),
-                alignment: Alignment.center,
-                child: e.child,
+              (e) => AnimatedOpacity(
+                key: ValueKey(e.index),
+                duration: const Duration(milliseconds: 300),
+                opacity: e.index - _currentIndex > widget.maxVisibleTopStackItem
+                    ? 0
+                    : 1,
+                child: Transform(
+                  transform: Matrix4.identity()
+                    ..translate(0.0, _currentPositions[e.index])
+                    ..scale(_calculateScaleByCurrentPosition(e.index)),
+                  alignment: Alignment.center,
+                  child: e.child,
+                ),
               ),
             ),
-            Transform(
-              transform: Matrix4.identity()
-                ..translate(0.0, _currentPositions[_currentIndex])
-                ..scale(_calculateScaleByCurrentPosition(_currentIndex)),
-              alignment: Alignment.center,
-              child: currentWidget.child,
+            AnimatedOpacity(
+              key: ValueKey(_currentIndex),
+              duration: const Duration(milliseconds: 300),
+              opacity: 1,
+              child: Transform(
+                transform: Matrix4.identity()
+                  ..translate(0.0, _currentPositions[_currentIndex])
+                  ..scale(_calculateScaleByCurrentPosition(_currentIndex)),
+                alignment: Alignment.center,
+                child: currentWidget.child,
+              ),
             ),
           ],
         ),
