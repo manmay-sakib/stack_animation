@@ -117,7 +117,7 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
       if (_currentIndex - i > widget.maxVisibleBottomStackItem + 1) continue;
       _bottomCards.add(
         _StackItem(
-          child: widget.itemBuilder(context, i),
+          child: AbsorbPointer(child: widget.itemBuilder(context, i)),
           index: i,
           visible: true,
         ),
@@ -129,7 +129,7 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
       if (i - _currentIndex > widget.maxVisibleTopStackItem + 1) continue;
       _topCards.add(
         _StackItem(
-          child: widget.itemBuilder(context, i),
+          child: AbsorbPointer(child: widget.itemBuilder(context, i)),
           index: i,
           visible: true,
         ),
