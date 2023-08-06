@@ -157,7 +157,8 @@ class _SwipeStackState extends State<SwipeStack> with TickerProviderStateMixin {
       // print(_dragDelta);
       if (_dragDelta.abs() > widget.minimumDragDistance) {
         int direction = _dragDelta > 0 ? 1 : -1;
-        _currentIndex = min(_currentIndex + direction, widget.itemCount - 1);
+        _currentIndex =
+            (_currentIndex + direction).clamp(0, widget.itemCount - 1);
       }
       _calculatePositions();
       _arrangeWidgets();
